@@ -1,0 +1,21 @@
+{
+  "name": "nickradar",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NickRadar — поиск свободных юзернеймов Telegram и проверка занятости любого @имени",
+  "scripts": {
+    "start": "node server.js",
+    "start:mock": "node server.js --mock",
+    "build:dict": "node scripts/build-dictionaries.mjs",
+    "build:webdict": "node scripts/build-web-dicts.mjs",
+    "test:smoke": "node scripts/smoke-test.mjs",
+    "test:candidates": "node scripts/test-candidates.mjs",
+    "test:store": "node scripts/test-store.mjs",
+    "test:search": "node scripts/test-search.mjs",
+    "test": "node scripts/test-candidates.mjs && node scripts/test-store.mjs && node scripts/test-search.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

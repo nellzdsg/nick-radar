@@ -1,0 +1,20 @@
+# Blueprint для Render: New → Blueprint → выбрать репозиторий.
+# Render сам создаст веб-сервис с нужными командами и переменными.
+services:
+  - type: web
+    name: nickradar
+    runtime: node
+    plan: free
+    autoDeploy: true
+    buildCommand: echo no-dependencies
+    startCommand: node server.js
+    healthCheckPath: /api/config
+    envVars:
+      - key: BOT_TOKEN
+        sync: false # значение вводится в панели Render и не хранится в репозитории
+      - key: CORS_ORIGIN
+        value: '*'
+      - key: CHECK_CONCURRENCY
+        value: '2'
+      - key: CHECK_MIN_INTERVAL_MS
+        value: '320'

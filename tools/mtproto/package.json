@@ -1,0 +1,10 @@
+{
+  "name": "tg-username-finder-mtproto",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Необязательный модуль точной проверки юзернеймов через MTProto (GramJS) — только для tools/, на основной сервер не влияет",
+  "dependencies": {
+    "telegram": "^2.26.22"
+  }
+}

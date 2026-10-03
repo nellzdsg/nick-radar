@@ -1,0 +1,14 @@
+node_modules/
+.env
+.pnpm-store/
+.pylibs/
+*.log
+Thumbs.db
+.DS_Store
+
+# личный кэш проверок — на GitHub не нужен
+/data/cache.json
+
+# полные словари нужны только для сборки нарезки (npm run build:webdict);
+# браузеру отдаются нарезанные файлы из public/data (они в репозиторий входят)
+/data/*.txt

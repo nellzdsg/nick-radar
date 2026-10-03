@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NickRadar — свободные юзернеймы Telegram</title>
+  <meta name="description" content="NickRadar: поиск свободных юзернеймов Telegram по длине, приставке и окончанию, а также проверка любого @имени — занято, свободно или продаётся на Fragment." />
+  <meta name="theme-color" content="#070905" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <span class="bg__glow bg__glow--one"></span>
+    <span class="bg__glow bg__glow--two"></span>
+    <span class="bg__grid"></span>
+  </div>
+
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="#top">
+        <span class="brand__mark">@</span>
+        <span class="brand__name">Nick<b>Radar</b></span>
+      </a>
+      <nav class="topnav">
+        <a href="#checker">Чекер</a>
+        <a href="#finder">Поиск</a>
+        <a href="#how">Как работает</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <a class="btn btn--accent btn--sm" href="https://t.me/nellzdsg" target="_blank" rel="noreferrer">Написать</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ======================= HERO ======================= -->
+    <section class="hero">
+      <p class="eyebrow">Telegram · юзернеймы · проверка занятости</p>
+      <h1>Найди свободный<br /><span class="accent">@юзернейм</span> в Telegram</h1>
+      <p class="lead">
+        NickRadar перебирает имена по твоим правилам — длина, приставка, окончание, словарная основа —
+        и проверяет каждое по публичным страницам Telegram и Fragment. Отдельный инструмент проверит
+        любое конкретное имя за пару секунд.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--accent btn--lg" href="#finder">Найти юзернейм</a>
+        <a class="btn btn--ghost btn--lg" href="#checker">Username Checker</a>
+      </div>
+      <ul class="hero__facts">
+        <li><b id="factEn">340 450</b><span>английских слов</span></li>
+        <li><b id="factRu">45 427</b><span>русских слов транслитом</span></li>
+        <li><b>3</b><span>источника проверки</span></li>
+      </ul>
+    </section>
+
+    <div class="ribbon" aria-hidden="true">
+      <div class="ribbon__track" id="ribbonTrack">
+        <div class="ribbon__group">
+          <span>Свободные юзернеймы</span><i>·</i>
+          <span>Проверка занятости</span><i>·</i>
+          <span>Fragment</span><i>·</i>
+          <span>t.me</span><i>·</i>
+          <span>Bot API</span><i>·</i>
+          <span>Чёрный список</span><i>·</i>
+          <span>Словари</span><i>·</i>
+        </div>
+      </div>
+    </div>
+
+    <div id="banners" class="banners"></div>
+
+    <!-- ======================= CHECKER ======================= -->
+    <section class="section" id="checker">
+      <header class="section__head">
+        <p class="eyebrow">Инструмент 01</p>
+        <h2>Username Checker</h2>
+        <p class="section__lead">Введи имя — покажу, свободно ли оно в Telegram, занято ли кем-то или продаётся на Fragment.</p>
+      </header>
+
+      <form class="checker" id="checkForm">
+        <label class="checker__field">
+          <span class="checker__at">@</span>
+          <input id="checkInput" type="text" placeholder="username" autocomplete="off" spellcheck="false" maxlength="32" />
+        </label>
+        <button class="btn btn--accent btn--lg" id="checkBtn" type="submit">Проверить</button>
+      </form>
+
+      <div class="verdict" id="checkResult" hidden></div>
+    </section>
+
+    <!-- ======================= FINDER ======================= -->
+    <section class="section" id="finder">
+      <header class="section__head">
+        <p class="eyebrow">Инструмент 02</p>
+        <h2>Поиск свободных имён</h2>
+        <p class="section__lead">
+          Настрой правила один раз — дальше одна кнопка. Сервис вернёт только те имена, которые реально можно занять,
+          а платные и «призрачные» отправит в отдельные блоки.
+        </p>
+      </header>
+
+      <details class="panel settings" id="settings" open>
+        <summary class="settings__summary">
+          <span class="settings__title">Настройки поиска</span>
+          <span class="settings__hint" id="settingsHint">длина 6 · слово</span>
+          <span class="settings__chevron" aria-hidden="true"></span>
+        </summary>
+
+        <div class="settings__body">
+          <div class="field">
+            <div class="field__head">
+              <span class="field__label">Длина юзернейма</span>
+              <span class="field__value mono" id="lengthValue">6</span>
+            </div>
+            <div class="chips" id="lengthChips" role="radiogroup" aria-label="Длина юзернейма"></div>
+          </div>
+
+          <div class="grid grid--2">
+            <div class="field">
+              <label class="field__label" for="prefixInput">Приставка — начало имени</label>
+              <input class="input mono" id="prefixInput" type="text" placeholder="iam, real, the" maxlength="16" autocomplete="off" spellcheck="false" />
+              <div class="presets" id="prefixPresets"></div>
+            </div>
+            <div class="field">
+              <label class="field__label" for="suffixInput">Окончание — конец имени</label>
+              <input class="input mono" id="suffixInput" type="text" placeholder="1337, 777, bot" maxlength="16" autocomplete="off" spellcheck="false" />
+              <div class="presets" id="suffixPresets"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field__label">Основа имени</span>
+            <div class="chips chips--wide" id="baseChips" role="radiogroup" aria-label="Основа имени"></div>
+          </div>
+
+          <div class="field" id="dictBlock">
+            <span class="field__label">Словари</span>
+            <div class="checks" id="dictList"></div>
+            <label class="switch switch--sub">
+              <input type="checkbox" id="addPron" />
+              <span class="switch__track"><span class="switch__thumb"></span></span>
+              <span class="switch__text">добивать произносимыми сочетаниями, когда слова закончатся</span>
+            </label>
+          </div>
+
+          <div class="field">
+            <label class="switch">
+              <input type="checkbox" id="randomDigits" />
+              <span class="switch__track"><span class="switch__thumb"></span></span>
+              <span class="switch__text">
+                случайные цифры в окончании
+                <small>длина = число цифр в поле «Окончание» (пусто → 4 цифры)</small>
+              </span>
+            </label>
+          </div>
+
+          <p class="shape" id="shapeHint">Формат: имя целиком</p>
+        </div>
+      </details>
+
+      <div class="finder__actions">
+        <button class="btn btn--accent btn--xl" id="searchBtn">Найти юзернейм</button>
+        <button class="btn btn--ghost" id="continueBtn" hidden>Продолжить поиск</button>
+        <button class="btn btn--ghost" id="stopBtn" hidden>Остановить</button>
+      </div>
+
+      <div class="alert alert--error" id="errorBox" hidden></div>
+
+      <div class="panel progress" id="progressCard" hidden>
+        <div class="progress__head">
+          <span id="statusText">Ищу…</span>
+          <span class="mono muted" id="statusCounts">проверено 0</span>
+        </div>
+        <div class="bar"><div class="bar__fill" id="barFill"></div></div>
+        <div class="progress__meta">
+          <span class="mono" id="currentName">—</span>
+          <span class="muted" id="speedText"></span>
+        </div>
+        <div class="ticker" id="ticker" aria-live="polite"></div>
+      </div>
+
+      <section class="results" id="results" hidden>
+        <h3 class="results__title">Свободны и не продаются <span class="badge badge--ok" id="foundCount">0</span></h3>
+        <ul class="results__list" id="resultsList"></ul>
+        <p class="hint" id="resultsNote"></p>
+      </section>
+
+      <section class="results" id="collectiblesSection" hidden>
+        <h3 class="results__title">Продаются на Fragment <span class="badge badge--warn" id="collectibleCount">0</span></h3>
+        <p class="hint">
+          Эти имена никем не заняты, но Telegram не отдаёт их бесплатно: они коллекционные и продаются на
+          <a href="https://fragment.com" target="_blank" rel="noreferrer">fragment.com</a>. Купить можно только за TON.
+        </p>
+        <ul class="results__list" id="collectibleList"></ul>
+      </section>
+
+      <div class="alert alert--warn" id="likelyBox" hidden></div>
+    </section>
+
+    <!-- ======================= HOW ======================= -->
+    <section class="section" id="how">
+      <header class="section__head">
+        <p class="eyebrow">Как это работает</p>
+        <h2>Три источника проверки</h2>
+        <p class="section__lead">Официального публичного метода «свободен ли юзернейм» у Telegram нет, поэтому проверка идёт по трём каналам.</p>
+      </header>
+      <div class="steps">
+        <article class="step">
+          <span class="step__num mono">01</span>
+          <h4>Публичная страница</h4>
+          <p class="mono step__code">t.me/имя</p>
+          <p>Есть превью с именем или названием — юзернейм занят. Вместо превью заглушка — свободен, идём дальше.</p>
+        </article>
+        <article class="step">
+          <span class="step__num mono">02</span>
+          <h4>Fragment</h4>
+          <p class="mono step__code">fragment.com/username/имя</p>
+          <p>Коллекционные имена Telegram: если имя продано или выставлено на аукцион, бесплатно его не занять — показываем в отдельном блоке с ценой.</p>
+        </article>
+        <article class="step">
+          <span class="step__num mono">03</span>
+          <h4>Bot API</h4>
+          <p class="mono step__code">getChat</p>
+          <p>Резервный канал на случай, когда t.me недоступен. Требует токен бота, который можно вставить в настройках ниже.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ======================= FAQ ======================= -->
+    <section class="section" id="faq">
+      <header class="section__head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Частые вопросы</h2>
+      </header>
+      <div class="faq">
+        <details>
+          <summary>Имя свободно, но Telegram не даёт его занять. Почему?</summary>
+          <p>
+            Такие имена называют «призрачными»: владелец аккаунта или канала удалён либо заблокирован, а Telegram
+            оставил имя зарезервированным. Через публичные страницы они не отличаются от свободных.
+            Нажми на карточке «Не дали занять» — имя уйдёт в чёрный список и больше не будет предлагаться.
+          </p>
+        </details>
+        <details>
+          <summary>Что такое коллекционные имена и Fragment?</summary>
+          <p>
+            Часть имён Telegram не отдаёт бесплатно, а продаёт на своей площадке
+            <a href="https://fragment.com" target="_blank" rel="noreferrer">fragment.com</a> за TON. Такие имена попадают
+            в блок «Продаются на Fragment» со статусом (продан, на продаже, на аукционе) и ссылкой на покупку.
+          </p>
+        </details>
+        <details>
+          <summary>Откуда словари?</summary>
+          <p>
+            Английские слова — открытый список english-words (около 340 000 слов), русские — существительные,
+            переведённые в латиницу (около 45 000). Оба списка можно пересобрать командой <span class="mono">npm run build:dict</span>.
+          </p>
+        </details>
+        <details>
+          <summary>Почему короткие имена почти не находятся?</summary>
+          <p>
+            Имена из 5–7 символов разбирали годами: они либо заняты, либо продаются на Fragment, либо оказались
+            «призрачными». Реальные находки начинаются с 8+ символов или в режиме произносимых сочетаний.
+          </p>
+        </details>
+        <details>
+          <summary>С какой скоростью идёт проверка?</summary>
+          <p>
+            Около двух имён в секунду: сервис специально тормозит себя, чтобы Telegram не заблокировал запросы.
+            При ответе «слишком часто» он делает паузу и продолжает сам. За один проход — до 10 свободных имён,
+            дальше кнопка «Продолжить поиск».
+          </p>
+        </details>
+        <details>
+          <summary>Где хранится кэш проверок и чёрный список?</summary>
+          <p>
+            В твоём браузере (localStorage): история проверок, пометки «не дали занять» и общий чёрный список,
+            который собрали другие пользователи. На сервер эти данные не уходят — он вообще не хранит состояние,
+            поэтому хостинг остаётся бесплатным. Очистить память можно в настройках браузера.
+          </p>
+        </details>
+        <details>
+          <summary>Как выложить сайт в интернет?</summary>
+          <p>
+            Обе части бесплатны. Страница — это статика, её отдаёт GitHub Pages. Проверки живут в serverless-функции
+            (Vercel или Netlify, бесплатный тариф): генерация имён и словари работают в браузере, а функция только
+            проверяет имена и не хранит состояние. Пошаговая инструкция — в файле <span class="mono">DEPLOY.md</span>.
+          </p>
+        </details>
+      </div>
+
+      <details class="panel settings settings--token">
+        <summary class="settings__summary">
+          <span class="settings__title">Токен бота (необязательно)</span>
+          <span class="settings__hint">для резервного канала Bot API</span>
+          <span class="settings__chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="settings__body">
+          <p class="hint">
+            Токен нужен только как запасной канал, когда t.me недоступен. Получить: <a href="https://t.me/BotFather" target="_blank" rel="noreferrer">@BotFather</a>
+            → <span class="mono">/newbot</span>. Токен хранится в этом браузере и в файле <span class="mono">.env</span> на сервере — больше никуда не отправляется.
+          </p>
+          <div class="row">
+            <input class="input mono" id="tokenInput" type="password" placeholder="123456:AA…" autocomplete="off" spellcheck="false" />
+            <button class="btn btn--ghost" id="tokenSave" type="button">Сохранить и проверить</button>
+            <button class="btn btn--ghost" id="tokenClear" type="button">Забыть</button>
+          </div>
+          <p class="hint" id="tokenState"></p>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <!-- ======================= FOOTER ======================= -->
+  <footer class="footer" id="contact">
+    <div class="footer__cta">
+      <div>
+        <p class="eyebrow">Контакты</p>
+        <h2>Связаться</h2>
+        <p class="lead lead--sm">Telegram: <a href="https://t.me/nellzdsg" target="_blank" rel="noreferrer">@nellzdsg</a> — вопросы, идеи, баги, предложения по сервису.</p>
+      </div>
+      <div class="footer__links">
+        <a class="btn btn--accent btn--lg" href="https://t.me/nellzdsg" target="_blank" rel="noreferrer">@nellzdsg</a>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>NickRadar — поиск и проверка юзернеймов Telegram</span>
+      <span>Проверка неофициальная: перед занятием имени открой его в Telegram</span>
+    </div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
