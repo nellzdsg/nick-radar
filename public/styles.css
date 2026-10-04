@@ -433,20 +433,28 @@ main, .topbar, .footer { position: relative; z-index: 1; }
 }
 @media (max-width: 760px) {
   .topnav { display: none; }
+  /* меню на телефоне скрыто — прижимаем кнопку к правому краю */
+  .topbar__inner .btn { margin-left: auto; }
   .hero { padding-top: 64px; padding-bottom: 48px; }
   .section { padding-top: 56px; }
   .hero__facts { gap: 26px; }
   .hero__facts b { font-size: 20px; }
   .footer__cta { padding-top: 48px; }
+  /* запас снизу, чтобы плашка Netlify не перекрывала последние строки */
+  .footer__bottom { padding-bottom: 84px; }
 }
 @media (max-width: 520px) {
-  .topbar__inner { padding-inline: 16px; }
+  .topbar__inner { padding-inline: 16px; gap: 12px; }
   .hero, .section, .footer__cta, .footer__bottom, .banners { padding-inline: 16px; }
   .btn--xl { padding: 16px 22px; font-size: 15.5px; }
   .settings__summary, .settings__body { padding-inline: 16px; }
   .settings__hint { display: none; }
   .panel { padding-inline: 16px; }
   .checker .btn { width: 100%; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.12em; }
+  .hero__facts { gap: 18px; }
+  .hero__facts b { font-size: 18px; }
+  .hero__facts span { font-size: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
