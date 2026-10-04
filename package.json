@@ -13,6 +13,7 @@
     "test:candidates": "node scripts/test-candidates.mjs",
     "test:store": "node scripts/test-store.mjs",
     "test:search": "node scripts/test-search.mjs",
+    "test:netlify": "node scripts/test-netlify.mjs",
     "test": "node scripts/test-candidates.mjs && node scripts/test-store.mjs && node scripts/test-search.mjs"
   },
   "engines": {

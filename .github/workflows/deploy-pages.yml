@@ -1,7 +1,7 @@
 name: Deploy frontend to GitHub Pages
 
-# Публикует только папку public/ — сервер проверок (server.js) на Pages не работает,
-# его держим отдельно (например, на Render).
+# Публикует только папку public/ — это статика (интерфейс, словари, генерация имён в браузере).
+# Проверки имён выполняют serverless-функции из api/ на Vercel, адрес которых указан в public/config.js.
 on:
   push:
     branches: [main]

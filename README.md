@@ -109,8 +109,10 @@ Telegram не отдал другим пользователям.
 
 Пошаговая инструкция без командной строки — в **[DEPLOY.md](DEPLOY.md)**. Коротко:
 
-- **Vercel** (Hobby, бесплатно) — импортируешь репозиторий, и всё работает сразу: статика + функции.
-  Это самый простой путь, ничего настраивать не нужно.
+- **Netlify** (Starter, бесплатно, **не просит телефон**) — рекомендованный путь: импортируешь репозиторий,
+  настройки берутся из `netlify.toml`, функции лежат в `netlify/functions/`. Работает всё сразу.
+- **Vercel** (Hobby, бесплатно) — тоже поддерживается «из коробки» (`vercel.json` + `api/`), но при регистрации
+  Vercel требует подтвердить аккаунт по номеру телефона, и на российские номера SMS часто не доходит.
 - **GitHub Pages** — по желанию, для «красивого» адреса: workflow `.github/workflows/deploy-pages.yml`
   публикует папку `public/`, а адрес API указывается в `public/config.js`.
 
@@ -130,6 +132,7 @@ npm run build:webdict   # нарезает их по длинам в public/data
 
 ```powershell
 npm test               # офлайн: генератор имён, кэш/чёрный список, цикл поиска
+npm run test:netlify   # Netlify-функции (с живой проверкой двух имён)
 npm run test:smoke     # живой API: нужен запущенный сервер (и сеть для реальных проверок)
 ```
 
@@ -144,9 +147,11 @@ npm run test:smoke     # живой API: нужен запущенный сер�
 ```
 server.js                      локальный сервер: статика + те же /api/*
 start.cmd                      запуск двойным кликом (находит node.exe сам)
-DEPLOY.md                      как выложить на Vercel и GitHub Pages
+DEPLOY.md                      как выложить на Netlify / Vercel и GitHub Pages
+netlify.toml                   настройки Netlify (статика из public, функции из netlify/functions)
+netlify/functions/*.mjs        serverless-функции для Netlify
 vercel.json                    настройки Vercel (статика из public, лимит функций)
-api/check.js, api/batch.js     serverless-функции (Vercel/Netlify)
+api/check.js, api/batch.js     serverless-функции для Vercel
 src/checker.js                 проверка пачки: общая логика сервера и функций
 src/telegram.js                проверка через t.me + резерв Bot API
 src/fragment.js                проверка коллекционных имён на fragment.com

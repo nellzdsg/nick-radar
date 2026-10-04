@@ -38,7 +38,7 @@ const SEARCH_LIMITS = { batchSize: 12, maxFound: 10, maxChecks: 240, timeBudgetM
 const state = {
   config: null,
   manifest: null,
-  apiReady: true,
+  apiFailed: false,
   length: 6,
   prefix: '',
   suffix: '',
@@ -74,6 +74,7 @@ async function api(path, options = {}) {
     response = await fetch(API_BASE + path, { headers: { 'Content-Type': 'application/json' }, ...options });
   } catch {
     if (options.signal?.aborted) throw new Error('Остановлено.');
+    markApiUnavailable();
     throw new Error(
       API_BASE
         ? `Сервер проверок ${API_BASE} недоступен. Проверь адрес в config.js.`
@@ -88,11 +89,24 @@ async function api(path, options = {}) {
     data = { error: text };
   }
   if (!response.ok) {
+    // 404 значит, что функции проверки не задеплоены на этом домене
+    if (response.status === 404) markApiUnavailable();
     const error = new Error(data?.error || `HTTP ${response.status}`);
     error.status = response.status;
     throw error;
   }
+  if (state.apiFailed) {
+    state.apiFailed = false;
+    renderBanners();
+  }
   return data;
+}
+
+/** Помечаем, что функции проверки недоступны, и показываем плашку. */
+function markApiUnavailable() {
+  if (state.apiFailed) return;
+  state.apiFailed = true;
+  renderBanners();
 }
 
 const checkBatch = async (names, { signal } = {}) => {
@@ -126,9 +140,10 @@ async function init() {
 
   try {
     state.config = await api('/api/config');
-    if (state.config.maxBatchSize) SEARCH_LIMITS.batchSize = Math.min(20, state.config.maxBatchSize);
+    if (state.config?.maxBatchSize) SEARCH_LIMITS.batchSize = Math.min(20, state.config.maxBatchSize);
   } catch {
-    state.apiReady = false;
+    // ручка необязательна: у статического хостинга её может не быть — это не ошибка
+    state.config = null;
   }
 
   try {
@@ -738,13 +753,13 @@ function renderBanners() {
   if (state.config?.mock) {
     wrap.append(banner('warn', 'Сервер запущен в демо-режиме (--mock): вердикты выдуманные, сеть не опрашивается.'));
   }
-  if (!state.apiReady) {
+  if (state.apiFailed) {
     wrap.append(
       banner(
         'error',
         API_BASE
           ? `Не удалось связаться с сервером проверок (${API_BASE}). Проверь адрес в config.js.`
-          : 'Сервер проверок недоступен. Запусти его командой npm start (или start.cmd) — либо, если страница открыта с хостинга, укажи адрес API в config.js.',
+          : 'Функции проверки недоступны на этом домене. Либо запусти сайт локально (npm start / start.cmd), либо укажи адрес API в config.js.',
       ),
     );
   } else if (!state.config?.hasServerToken && !getToken()) {
