@@ -165,7 +165,6 @@ async function init() {
   if (state.dicts.size === 0) state.dicts.add('en');
   renderDicts();
   renderBanners();
-  renderTokenState();
   syncForm();
 }
 
@@ -247,13 +246,6 @@ function bindUi() {
     if (block) return blockName(block.dataset.block, block, true);
     const unblock = event.target.closest('button[data-unblock]');
     if (unblock) unblockName(unblock.dataset.unblock);
-  });
-
-  $('tokenSave').addEventListener('click', () => void saveToken());
-  $('tokenClear').addEventListener('click', () => {
-    localStorage.removeItem(TOKEN_KEY);
-    $('tokenInput').value = '';
-    $('tokenState').textContent = 'Токен удалён из этого браузера.';
   });
 }
 
@@ -762,42 +754,6 @@ function renderBanners() {
           : 'Функции проверки недоступны на этом домене. Либо запусти сайт локально (npm start / start.cmd), либо укажи адрес API в config.js.',
       ),
     );
-  } else if (!state.config?.hasServerToken && !getToken()) {
-    wrap.append(
-      banner(
-        'info',
-        'Имена проверяются по публичным страницам t.me и fragment.com — токен бота не нужен. Он пригодится только как резервный канал Bot API (блок в FAQ) и по умолчанию живёт на сервере.',
-      ),
-    );
-  }
-}
-
-function renderTokenState() {
-  if (state.config?.hasServerToken) {
-    $('tokenState').textContent = 'Сервер использует токен из .env. Поле выше нужно только чтобы переопределить его.';
-  } else if (getToken()) {
-    $('tokenState').textContent = 'Токен сохранён в этом браузере и уходит только на сервер проверок.';
-  } else {
-    $('tokenState').textContent = 'Токен не задан.';
-  }
-}
-
-async function saveToken() {
-  const value = $('tokenInput').value.trim();
-  if (!value) return showAlert('Вставь токен бота, полученный у @BotFather.');
-  localStorage.setItem(TOKEN_KEY, value);
-  $('tokenState').textContent = 'Проверяю токен через Telegram…';
-  hideAlert();
-  try {
-    const data = await api('/api/check', { method: 'POST', body: JSON.stringify({ name: 'telegram', token: value }) });
-    $('tokenState').textContent =
-      data.status === 'taken'
-        ? 'Токен рабочий: Telegram отвечает, служебный @telegram занят — доступ есть.'
-        : `Токен принят, ответ Telegram: ${STATUS_LABELS[data.status] ?? data.status}.`;
-    renderBanners();
-  } catch (error) {
-    $('tokenState').textContent = 'Токен не прошёл проверку.';
-    showAlert(error.message);
   }
 }
 
