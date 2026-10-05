@@ -5,7 +5,7 @@
  * отвечает только на вопрос «занято ли это имя». Поэтому сайт одинаково работает локально,
  * на Vercel и как статическая страница на GitHub Pages.
  */
-import { createPool, baseLengthFor } from './lib/pool.js';
+import { createPool, totalLengthFor } from './lib/pool.js';
 import { loadManifest, loadWordsForAll, loadSeedBlocked } from './lib/dictionaries.js';
 import { ResultStore, safeStorage } from './lib/store.js';
 import { runSearch } from './lib/search.js';
@@ -13,7 +13,11 @@ import { runSearch } from './lib/search.js';
 const API_BASE = String(window.NICKRADAR_API_BASE || '').replace(/\/+$/, '');
 const TOKEN_KEY = 'nickradar.token';
 
-const LENGTHS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+/** Длины основы: приставка и окончание в неё не входят, поэтому можно и 3 буквы. */
+const BASE_LENGTHS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+/** Границы, которые принимает Telegram для юзернейма целиком. */
+const MIN_TOTAL = 5;
+const MAX_TOTAL = 32;
 const PRESETS = {
   prefix: ['iam', 'real', 'the', 'mr', 'its'],
   suffix: ['1337', '777', '007', 'x', 'bot', 'pro'],
@@ -253,15 +257,26 @@ function bindUi() {
 
 function renderLengthChips() {
   const available = state.manifest?.dictionaries?.some((dict) => dict.byLength) ? new Set(state.manifest.lengths) : null;
+  const randomDigits = state.randomDigits ? state.suffix.length || 4 : 0;
+
   $('lengthChips').replaceChildren(
-    ...LENGTHS.map((value) => {
+    ...BASE_LENGTHS.map((value) => {
       const chip = el('button', 'chip', String(value));
       chip.type = 'button';
       chip.dataset.length = String(value);
       chip.setAttribute('role', 'radio');
       chip.setAttribute('aria-checked', String(value === state.length));
+
       const known = state.manifest?.dictionaries?.find((dict) => dict.byLength?.[value]);
-      if (available && !known) chip.classList.add('chip--dim');
+      const total = totalLengthFor({ baseLength: value, prefix: state.prefix, suffix: state.suffix, randomDigits });
+      // неактуальные варианты гасим: нет слов такой длины или Telegram не примет такую длину целиком
+      if ((available && !known) || total < MIN_TOTAL || total > MAX_TOTAL) {
+        chip.classList.add('chip--dim');
+        chip.title =
+          total < MIN_TOTAL
+            ? `Вместе с приставкой и окончанием получится ${total} симв. — Telegram не выдаёт короче ${MIN_TOTAL}`
+            : `Итого ${total} симв. — больше ${MAX_TOTAL} Telegram не принимает`;
+      }
       return chip;
     }),
   );
@@ -327,17 +342,17 @@ function syncForm() {
   $('suffixInput').disabled = state.randomDigits;
 
   const randomDigits = state.randomDigits ? state.suffix.length || 4 : 0;
-  const tail = randomDigits || state.suffix.length;
-  const baseLength = baseLengthFor({ length: state.length, prefix: state.prefix, suffix: state.suffix, randomDigits });
+  const baseLength = state.length;
+  const total = totalLengthFor({ baseLength, prefix: state.prefix, suffix: state.suffix, randomDigits });
   const baseLabel = BASES.find((base) => base.id === state.base)?.label.toLowerCase() ?? '';
 
   const shape = el('span');
   shape.append('Формат: ');
   if (state.prefix) shape.append(el('b', null, state.prefix), ' + ');
-  shape.append(baseLength > 0 ? `${baseLabel} (${baseLength})` : 'ничего');
+  shape.append(`${baseLabel} (${baseLength})`);
   if (randomDigits) shape.append(' + ', el('b', null, `${randomDigits} случайных цифр`));
   else if (state.suffix) shape.append(' + ', el('b', null, state.suffix));
-  shape.append(` = ${state.length} симв.`);
+  shape.append(` = `, el('b', null, `${total} симв.`));
 
   const stats = state.store?.stats();
   if (stats && (stats.blocked || stats.taken)) {
@@ -346,21 +361,27 @@ function syncForm() {
 
   const hint = $('shapeHint');
   hint.replaceChildren(shape);
-  if (baseLength < 0) hint.append(el('span', 'shape__warn', ' — приставка и окончание длиннее выбранной длины'));
-  else if (tail >= state.length && baseLength === 0) {
-    hint.append(el('span', 'shape__warn', ' — имя целиком задано приставкой и окончанием, будет проверено одно имя'));
-  } else if (state.base === 'word' && baseLength > 0 && baseLength < 5) {
-    hint.append(el('span', 'shape__warn', ` — слов длиной ${baseLength} в словарях нет, включи произносимые сочетания`));
+  if (total < MIN_TOTAL) {
+    hint.append(
+      el('span', 'shape__warn', ` — вместе получается ${total} симв., а Telegram не выдаёт короче ${MIN_TOTAL}: возьми основу длиннее или добавь приставку с окончанием`),
+    );
+  } else if (total > MAX_TOTAL) {
+    hint.append(el('span', 'shape__warn', ` — ${total} симв. это больше ${MAX_TOTAL}, Telegram такое имя не примет`));
+  } else if (baseLength < 3) {
+    hint.append(el('span', 'shape__warn', ' — основа короче 3 букв: таких слов в словарях нет'));
   }
 
   $('settingsHint').textContent = [
-    `${state.length} симв.`,
+    `основа ${baseLength}`,
     baseLabel,
     state.prefix ? `${state.prefix}…` : '',
     randomDigits ? `+${randomDigits} цифр` : state.suffix ? `…${state.suffix}` : '',
+    `итого ${total}`,
   ]
     .filter(Boolean)
     .join(' · ');
+
+  renderLengthChips();
 }
 
 /* ------------------------------ чекер ------------------------------ */
@@ -480,33 +501,37 @@ async function search(continueRun) {
   const randomDigits = state.randomDigits ? state.suffix.length || 4 : 0;
 
   if (!continueRun) {
-    const baseLength = baseLengthFor({ length: state.length, prefix: state.prefix, suffix: state.suffix, randomDigits });
-    if (baseLength < 0) {
-      return showAlert('Приставка и окончание длиннее выбранной длины — уменьши их или увеличь длину.');
-    }
-    if (base.id === 'word' && baseLength > 0 && state.dicts.size === 0 && !state.addPron) {
-      return showAlert('Выбери хотя бы один словарь или включи добивку произносимыми сочетаниями.');
-    }
-    if (base.id === 'word' && baseLength > 0 && baseLength < 5 && !state.addPron) {
+    const baseLength = state.length;
+    const total = totalLengthFor({ baseLength, prefix: state.prefix, suffix: state.suffix, randomDigits });
+    if (total < MIN_TOTAL) {
       return showAlert(
-        `Слов длиной ${baseLength} в словарях нет. Включи «добивать произносимыми сочетаниями», выбери другую основу или увеличь длину.`,
+        `Вместе получается ${total} симв., а Telegram не выдаёт юзернеймы короче ${MIN_TOTAL}. Возьми основу длиннее или добавь приставку и окончание.`,
       );
+    }
+    if (total > MAX_TOTAL) {
+      return showAlert(`Вместе получается ${total} симв., а Telegram принимает не больше ${MAX_TOTAL}. Уменьши основу, приставку или окончание.`);
+    }
+    if (baseLength < 3) {
+      return showAlert('Основа короче 3 букв — таких слов в словарях нет. Выбери основу от 3 букв.');
+    }
+    if (base.id === 'word' && state.dicts.size === 0 && !state.addPron) {
+      return showAlert('Выбери хотя бы один словарь или включи добивку произносимыми сочетаниями.');
     }
 
     setBusy(true);
     try {
       let words = [];
-      if (base.id === 'word' && baseLength > 0) {
+      if (base.id === 'word') {
         setStatus('Загружаю словарь…');
         words = await loadWordsForAll([...state.dicts], baseLength);
       }
-      if (base.id === 'word' && baseLength > 0 && words.length === 0 && !state.addPron) {
+      if (base.id === 'word' && words.length === 0 && !state.addPron) {
         setBusy(false);
         setStatus('Готов к поиску');
-        return showAlert(`В словарях нет слов длиной ${baseLength}. Выбери другую длину или включи произносимые сочетания.`);
+        return showAlert(`В словарях нет слов длиной ${baseLength}. Выбери другую основу или включи произносимые сочетания.`);
       }
       state.pool = createPool({
-        length: state.length,
+        baseLength,
         mode: base.mode,
         words,
         addPronounceable: state.addPron,

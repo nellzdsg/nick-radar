@@ -51,8 +51,8 @@
         <a class="btn btn--ghost btn--lg" href="#checker">Username Checker</a>
       </div>
       <ul class="hero__facts">
-        <li><b id="factEn">340 450</b><span>английских слов</span></li>
-        <li><b id="factRu">45 427</b><span>русских слов транслитом</span></li>
+        <li><b id="factEn">349 766</b><span>английских слов</span></li>
+        <li><b id="factRu">47 183</b><span>русских слов транслитом</span></li>
         <li><b>3</b><span>источника проверки</span></li>
       </ul>
     </section>
@@ -113,10 +113,15 @@
         <div class="settings__body">
           <div class="field">
             <div class="field__head">
-              <span class="field__label">Длина юзернейма</span>
+              <span class="field__label">Длина основы</span>
               <span class="field__value mono" id="lengthValue">6</span>
             </div>
-            <div class="chips" id="lengthChips" role="radiogroup" aria-label="Длина юзернейма"></div>
+            <div class="chips" id="lengthChips" role="radiogroup" aria-label="Длина основы"></div>
+            <p class="hint">
+              Считается только само слово — приставка и окончание идут сверху и в длину не входят.
+              Поэтому основу можно взять даже из 3–4 букв: главное, чтобы имя целиком было не короче 5 символов,
+              как требует Telegram.
+            </p>
           </div>
 
           <div class="grid grid--2">

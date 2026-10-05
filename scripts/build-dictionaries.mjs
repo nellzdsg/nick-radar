@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DATA = join(ROOT, 'data');
 
-const MIN_LEN = 5; // короче 5 символов Telegram бесплатно не выдаёт
+const MIN_LEN = 3; // основа может быть короткой: минимум 5 символов проверяется по итоговому имени
 const MAX_LEN = 14;
 
 const SOURCES = {

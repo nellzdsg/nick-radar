@@ -2,9 +2,12 @@
  * Генератор кандидатов — работает в браузере (и импортируется тестами в Node).
  *
  * Имя собирается как prefix + основа + окончание:
+ *   • baseLength — длина самой основы (приставка и окончание в неё НЕ входят);
  *   • prefix / suffix — фиксированные куски, которые задал пользователь (iam, 1337);
- *   • randomDigits > 0 — вместо окончания подставляются случайные цифры нужной длины;
- *   • длина основы = length − длина приставки − длина окончания.
+ *   • randomDigits > 0 — вместо окончания подставляются случайные цифры нужной длины.
+ *
+ * Итоговую длину юзернейма считает totalLengthFor(); Telegram принимает только 5–32 символа,
+ * поэтому за этим следит интерфейс.
  *
  * mode: 'word'  — слова из словаря (передаются в words),
  *       'pron'  — произносимые сочетания,
@@ -63,14 +66,18 @@ export function shuffleInPlace(list, rng = Math.random) {
   return list;
 }
 
-/** Сколько символов остаётся основе при заданных приставке и окончании. */
-export function baseLengthFor({ length, prefix = '', suffix = '', randomDigits = 0 }) {
+/**
+ * Итоговая длина юзернейма = приставка + основа + окончание.
+ * Длина основы задаётся отдельно (приставка и окончание в неё не входят),
+ * а Telegram требует, чтобы итог был не короче 5 и не длиннее 32 символов.
+ */
+export function totalLengthFor({ baseLength, prefix = '', suffix = '', randomDigits = 0 }) {
   const tail = randomDigits > 0 ? randomDigits : suffix.length;
-  return length - prefix.length - tail;
+  return prefix.length + baseLength + tail;
 }
 
 export function createPool({
-  length,
+  baseLength,
   mode = 'word',
   words = [],
   addPronounceable = false,
@@ -80,33 +87,33 @@ export function createPool({
   rng = Math.random,
 }) {
   const digits = Math.max(0, Math.min(8, randomDigits));
-  const baseLength = baseLengthFor({ length, prefix, suffix: digits ? '' : suffix, randomDigits: digits });
+  const size = Math.max(0, Math.min(32, Math.floor(Number(baseLength) || 0)));
 
   const used = new Set();
   const queue = [];
-  if (mode === 'word' && baseLength > 0) {
-    for (const word of words) if (word.length === baseLength) queue.push(word);
+  if (mode === 'word' && size > 0) {
+    for (const word of words) if (word.length === size) queue.push(word);
     shuffleInPlace(queue, rng);
   }
 
   const wantGenerated = mode === 'word' ? Boolean(addPronounceable) : true;
   let generated = 0;
 
-  const buildName = (base) => {
-    const tail = digits > 0 ? String(Math.floor(rng() * 10 ** digits)).padStart(digits, '0') : digits ? '' : suffix;
-    return prefix + base + tail;
+  const buildName = (part) => {
+    const tail = digits > 0 ? String(Math.floor(rng() * 10 ** digits)).padStart(digits, '0') : suffix;
+    return prefix + part + tail;
   };
 
   return {
     mode,
-    baseLength,
+    baseLength: size,
     wordsTotal: queue.length,
     wordsLeft: () => queue.length,
     get generatedCount() {
       return generated;
     },
     next() {
-      if (baseLength <= 0) {
+      if (size <= 0) {
         const name = buildName('');
         if (used.has(name)) return null;
         used.add(name);
@@ -121,18 +128,18 @@ export function createPool({
       }
       if (!wantGenerated) return null;
       for (let i = 0; i < 20000; i += 1) {
-        const base =
+        const part =
           mode === 'word' || mode === 'pron'
-            ? pronounceable(baseLength, rng)
+            ? pronounceable(size, rng)
             : mode === 'random'
-              ? randomString(baseLength, rng)
+              ? randomString(size, rng)
               : rng() < 0.75
-                ? pronounceable(baseLength, rng)
-                : randomString(baseLength, rng);
-        if (base.length !== baseLength || used.has(base)) continue;
-        used.add(base);
+                ? pronounceable(size, rng)
+                : randomString(size, rng);
+        if (part.length !== size || used.has(part)) continue;
+        used.add(part);
         generated += 1;
-        return buildName(base);
+        return buildName(part);
       }
       return null;
     },

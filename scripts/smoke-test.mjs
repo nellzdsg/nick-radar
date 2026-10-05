@@ -89,7 +89,7 @@ else fail('словарь для браузера', `получено ${words.le
 
 const store = new ResultStore({ storage: null });
 const result = await runSearch({
-  pool: createPool({ length: 7, mode: 'word', words }),
+  pool: createPool({ baseLength: 7, mode: 'word', words }),
   store,
   checkBatch: async (names) => {
     const { data } = await json('/api/batch', { method: 'POST', body: JSON.stringify({ names }) });

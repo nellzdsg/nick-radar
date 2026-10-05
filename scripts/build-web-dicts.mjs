@@ -19,7 +19,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DATA = join(ROOT, 'data');
 const OUT = join(ROOT, 'public', 'data');
 
-const MIN_LEN = 5;
+const MIN_LEN = 3; // от 3 букв: приставка и окончание не входят в длину основы
 const MAX_LEN = 14;
 const SOURCES = [
   { id: 'en', label: 'Английские слова', description: 'english-words (dwyl)', file: 'english.txt' },
