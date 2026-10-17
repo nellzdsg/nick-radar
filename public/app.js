@@ -35,6 +35,15 @@ const STATUS_LABELS = {
   unverified: 'не подтверждено',
   invalid: 'некорректное имя',
 };
+/** Иконки статусов — только оформление вердикта. */
+const STATUS_ICONS = {
+  free: 'check',
+  taken: 'lock',
+  collectible: 'tag',
+  blocked: 'ban',
+  unverified: 'warn',
+  invalid: 'info',
+};
 const SALE_LABELS = { Sold: 'Продан', 'On sale': 'На продаже', 'On auction': 'На аукционе', Available: 'Можно купить' };
 
 const SEARCH_LIMITS = { batchSize: 12, maxFound: 10, maxChecks: 240, timeBudgetMs: 45000 };
@@ -66,6 +75,16 @@ const el = (tag, className, text) => {
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
+};
+/** Иконка из инлайн-спрайта в index.html: <svg><use href="#ic-имя">. */
+const icon = (name) => {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'icon');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', `#ic-${name}`);
+  svg.append(use);
+  return svg;
 };
 const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
 const sanitize = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16);
@@ -129,6 +148,8 @@ init();
 async function init() {
   state.store = new ResultStore({ storage: safeStorage() });
   bindUi();
+  observeTopbar();
+  setupReveal();
   setupRibbon();
   renderLengthChips();
   renderBaseChips();
@@ -394,8 +415,10 @@ async function checkName() {
     return;
   }
   const button = $('checkBtn');
+  const label = button.querySelector('.btn__label');
   button.disabled = true;
-  button.textContent = 'Проверяю…';
+  button.classList.add('is-busy');
+  if (label) label.textContent = 'Проверяю…';
   try {
     const data = await api('/api/check', {
       method: 'POST',
@@ -406,7 +429,8 @@ async function checkName() {
     showCheckResult({ status: 'unverified', name, error: error.message });
   } finally {
     button.disabled = false;
-    button.textContent = 'Проверить';
+    button.classList.remove('is-busy');
+    if (label) label.textContent = 'Проверить';
   }
 }
 
@@ -418,7 +442,9 @@ function showCheckResult(data) {
   box.replaceChildren();
 
   const top = el('div', 'verdict__top');
-  top.append(el('span', 'verdict__name', `@${data.name}`), el('span', 'verdict__status', STATUS_LABELS[status] ?? status));
+  const mark = el('span', 'verdict__status');
+  mark.append(icon(STATUS_ICONS[status] ?? 'info'), el('span', null, STATUS_LABELS[status] ?? status));
+  top.append(el('span', 'verdict__name', `@${data.name}`), mark);
   box.append(top);
 
   const texts = {
@@ -443,23 +469,26 @@ function showCheckResult(data) {
 
   const row = el('div', 'verdict__row');
   if (status !== 'invalid') {
-    const tme = el('a', 'btn btn--ghost btn--tiny', `t.me/${data.name}`);
+    const tme = el('a', 'btn btn--ghost btn--tiny');
     tme.href = `https://t.me/${data.name}`;
     tme.target = '_blank';
     tme.rel = 'noreferrer';
-    const fragment = el('a', 'btn btn--ghost btn--tiny', 'Fragment');
+    tme.append(icon('external'), `t.me/${data.name}`);
+    const fragment = el('a', 'btn btn--ghost btn--tiny');
     fragment.href = `https://fragment.com/username/${data.name}`;
     fragment.target = '_blank';
     fragment.rel = 'noreferrer';
+    fragment.append(icon('tag'), 'Fragment');
     const copy = el('button', 'btn btn--ghost btn--tiny', 'Копировать');
     copy.type = 'button';
     copy.dataset.copy = data.name;
     row.append(tme, fragment, copy);
   }
   if (status === 'free' || status === 'taken') {
-    const block = el('button', 'btn btn--danger btn--tiny', 'Telegram не дал занять');
+    const block = el('button', 'btn btn--danger btn--tiny');
     block.type = 'button';
     block.dataset.block = data.name;
+    block.append(icon('ban'), 'Telegram не дал занять');
     row.append(block);
   }
   if (status === 'blocked') {
@@ -554,6 +583,7 @@ async function search(continueRun) {
   state.controller = new AbortController();
   state.running = true;
   $('progressCard').hidden = false;
+  $('progressCard').classList.add('is-running');
   $('stopBtn').hidden = false;
   $('continueBtn').hidden = true;
   setBusy(true, true);
@@ -570,6 +600,7 @@ async function search(continueRun) {
     });
   } finally {
     state.running = false;
+    $('progressCard').classList.remove('is-running');
     setBusy(false, false);
     $('stopBtn').hidden = true;
     $('continueBtn').hidden = Boolean(state.carry?.exhausted);
@@ -629,8 +660,11 @@ function finishRun(snap) {
 }
 
 function setBusy(busy, running = false) {
-  $('searchBtn').disabled = busy;
-  $('searchBtn').textContent = running ? 'Идёт поиск…' : 'Найти юзернейм';
+  const button = $('searchBtn');
+  const label = button.querySelector('.btn__label');
+  button.disabled = busy;
+  button.classList.toggle('is-busy', busy);
+  if (label) label.textContent = running ? 'Идёт поиск…' : 'Найти юзернейм';
 }
 
 function setStatus(text) {
@@ -671,20 +705,23 @@ function resultCard(entry) {
   card.append(el('div', 'result__name', entry.name));
 
   const row = el('div', 'result__row');
-  const tme = el('a', 'result__link', `t.me/${entry.name}`);
+  const tme = el('a', 'result__link');
   tme.href = `https://t.me/${entry.name}`;
   tme.target = '_blank';
   tme.rel = 'noreferrer';
-  const fragment = el('a', 'result__link', 'Fragment');
+  tme.append(icon('external'), `t.me/${entry.name}`);
+  const fragment = el('a', 'result__link');
   fragment.href = `https://fragment.com/username/${entry.name}`;
   fragment.target = '_blank';
   fragment.rel = 'noreferrer';
+  fragment.append(icon('tag'), 'Fragment');
   const copy = el('button', 'btn btn--ghost btn--tiny', 'Копировать');
   copy.type = 'button';
   copy.dataset.copy = entry.name;
-  const block = el('button', 'btn btn--danger btn--tiny', 'Не дали занять');
+  const block = el('button', 'btn btn--danger btn--tiny');
   block.type = 'button';
   block.dataset.block = entry.name;
+  block.append(icon('ban'), 'Не дали занять');
   row.append(tme, fragment, copy, block);
   if (entry.fromCache) row.append(el('span', 'result__cache', 'из памяти браузера'));
   card.append(row);
@@ -707,10 +744,11 @@ function renderCollectibles(entries) {
     card.append(el('div', 'result__meta', parts.join(' · ')));
 
     const row = el('div', 'result__row');
-    const buy = el('a', 'result__link', 'Купить на Fragment');
+    const buy = el('a', 'result__link');
     buy.href = `https://fragment.com/username/${entry.name}`;
     buy.target = '_blank';
     buy.rel = 'noreferrer';
+    buy.append(icon('tag'), 'Купить на Fragment');
     const copy = el('button', 'btn btn--ghost btn--tiny', 'Копировать');
     copy.type = 'button';
     copy.dataset.copy = entry.name;
@@ -766,7 +804,11 @@ function hideAlert() {
 function renderBanners() {
   const wrap = $('banners');
   wrap.replaceChildren();
-  const banner = (kind, text) => el('div', `alert alert--${kind}`, text);
+  const banner = (kind, text) => {
+    const node = el('div', `alert alert--${kind}`);
+    node.append(icon(kind === 'error' ? 'warn' : 'info'), el('span', null, text));
+    return node;
+  };
   if (state.config?.mock) {
     wrap.append(banner('warn', 'Сервер запущен в демо-режиме (--mock): вердикты выдуманные, сеть не опрашивается.'));
   }
@@ -793,6 +835,54 @@ async function copyText(text, button) {
   setTimeout(() => {
     button.textContent = original;
   }, 1200);
+}
+
+/* ---------------------------- оформление ---------------------------- */
+
+/** Шапка уплотняется, когда страница прокручена. */
+function observeTopbar() {
+  const bar = document.querySelector('.topbar');
+  if (!bar) return;
+  let scheduled = false;
+  const apply = () => {
+    scheduled = false;
+    bar.classList.toggle('is-scrolled', window.scrollY > 8);
+  };
+  apply();
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(apply);
+    },
+    { passive: true },
+  );
+}
+
+/**
+ * Мягкое появление секций. Класс .reveal ставим из скрипта: если JS не выполнится,
+ * на странице не останется ничего скрытого. Инструменты (чекер и настройки поиска)
+ * не прячем — они должны быть видны сразу.
+ */
+function setupReveal() {
+  if (!('IntersectionObserver' in window)) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const targets = document.querySelectorAll('.section__head, .steps, .faq, .footer__cta');
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    },
+    { rootMargin: '0px 0px -10% 0px', threshold: 0.05 },
+  );
+  for (const node of targets) {
+    node.classList.add('reveal');
+    observer.observe(node);
+  }
 }
 
 /* ---------------------------- бегущая строка ---------------------------- */
