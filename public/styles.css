@@ -1098,10 +1098,17 @@ main, .topbar, .footer { position: relative; z-index: 1; }
   .settings__hint { display: none; }
   .checker .btn { width: 100%; }
   .eyebrow { font-size: 11px; letter-spacing: 0.14em; gap: 10px; }
-  .hero__facts { gap: 14px 0; margin-top: 38px; }
-  .hero__facts li { padding-inline: 16px; }
-  .hero__facts b { font-size: 18px; }
-  .hero__facts span { font-size: 12px; }
+  /* на телефоне три показателя держим в одну строку: делим ширину поровну,
+     переносятся только длинные подписи, а не весь блок */
+  .hero__facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin-top: 38px;
+  }
+  .hero__facts li { padding-inline: 8px; align-items: center; text-align: center; }
+  .hero__facts b { font-size: 17px; }
+  .hero__facts span { font-size: 11.5px; line-height: 1.35; }
   #baseChips { grid-template-columns: 1fr; border-radius: var(--r-input); }
   .faq details, .settings__summary, .settings__body { padding-inline: 16px; }
   .faq p { padding-left: 0; }
