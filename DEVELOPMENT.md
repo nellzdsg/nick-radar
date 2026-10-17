@@ -91,7 +91,7 @@ src/telegram.js                проверка через t.me + резерв B
 src/fragment.js                проверка коллекционных имён на fragment.com
 src/limiter.js                 ограничитель частоты и пауза при 429
 public/index.html              страница: чекер, поиск, как работает, FAQ, контакты
-public/styles.css              оформление (тёмная тема, лаймовый акцент, Manrope/Inter/JetBrains Mono)
+public/styles.css              оформление (тёмная холодная тема, циан #22d3ee, Inter Tight/Inter/JetBrains Mono; токены в :root)
 public/app.js                  интерфейс: поиск, чекер, отрисовка
 public/lib/pool.js             генератор кандидатов (браузер + тесты)
 public/lib/dictionaries.js     загрузка нарезанных словарей
