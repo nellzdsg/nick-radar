@@ -675,12 +675,14 @@ function setStatus(text) {
 
 function renderTicker() {
   const marks = { free: ['free', 'свободен'], taken: ['taken', 'занят'], collectible: ['collectible', 'только за деньги'], 'likely-free': ['unknown', 'не подтверждено'], unverified: ['unknown', 'не подтверждено'] };
-  $('ticker').replaceChildren(
-    ...state.recent.slice(-14).map((item) => {
-      const [cls, mark] = marks[item.status] ?? ['unknown', 'не подтверждено'];
-      return el('span', `tick tick--${cls}`, `@${item.name} · ${mark}`);
-    }),
-  );
+  const items = state.recent.slice(-14).map((item) => {
+    const [cls, mark] = marks[item.status] ?? ['unknown', 'не подтверждено'];
+    return el('span', `tick tick--${cls}`, `@${item.name} · ${mark}`);
+  });
+  $('ticker').replaceChildren(...items);
+  // подпись журнала показываем только когда в нём есть записи
+  const label = $('tickerLabel');
+  if (label) label.hidden = items.length === 0;
 }
 
 function renderFound(entries) {
@@ -777,6 +779,8 @@ function resetResults() {
   $('resultsList').replaceChildren();
   $('collectibleList').replaceChildren();
   $('ticker').replaceChildren();
+  const tickerLabel = $('tickerLabel');
+  if (tickerLabel) tickerLabel.hidden = true;
   $('foundCount').textContent = '0';
   $('collectibleCount').textContent = '0';
   $('results').hidden = true;

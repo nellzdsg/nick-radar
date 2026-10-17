@@ -262,7 +262,10 @@
           <span class="mono" id="currentName">—</span>
           <span class="muted" id="speedText"></span>
         </div>
-        <div class="ticker" id="ticker" aria-live="polite"></div>
+        <div class="ticker__wrap">
+          <p class="ticker__label" id="tickerLabel" hidden>Последние проверки</p>
+          <div class="ticker" id="ticker" aria-live="polite"></div>
+        </div>
       </div>
 
       <section class="results" id="results" hidden>
